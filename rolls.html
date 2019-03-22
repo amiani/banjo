@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <meta charset='utf-8'/>
+  <head>
+    <title>Banjo Tools</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        user-select: none;
+        -moz-user-select: none;
+      }
+      p {
+        margin: 10px 0 10px 0;
+      }
+      .content {
+        display: flex;
+        flex-direction: column;
+      }
+      #beat {
+        font-size: large;
+      }
+      #roll {
+        font-size: x-large;
+      }
+      #nextroll {
+        color: #9e9e9e;
+        font-size: large;
+      }
+      .button {
+        border: solid black 2px;
+        display: inline-block;
+        padding: 2px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .button:hover {
+        background-color: #ee855e;
+      }
+      .selected {
+        background-color: #ee855e;
+      }
+      .buttons {
+        margin-bottom: 5px;
+        display: flex;
+        padding: 5px;
+        align-items: center;
+      }
+      .buttons > div,button {
+        margin: 0 5px 0 5px;
+      }
+      .bpmbutton {
+        border: solid black 2px;
+        padding: 2px;
+        min-width: 25px;
+      }
+      .bpmbutton:hover {
+        background: green;
+      }
+    </style>
+  </head>
+  <body>
+    <audio id='hit' src='hit.mp3' preload='auto'></audio>
+    <div class='content'>
+      <p id='beat'>1</p>
+      <p id='roll'>Forward</p>
+      <p id='nextroll'>Backward</p>
+      <div class='buttons'>
+        <button id='restart'>Restart</button>
+        <button id='stop'>Stop</button>
+        <div id='bpm'>90</div>
+        <div class='bpmbutton' id='plusfive'>+5</div>
+        <div class='bpmbutton' id='minusfive'>-5</div>
+      </div>
+      <div class='buttons'>
+        <div class='button' id='rolls'>Rolls</div>
+        <div class='button' id='variants'>Roll Variants</div>
+        <div class='button' id='patterns'>Patterns</div>
+        <div class='button selected' id='chords'>Chords</div>
+      </div>
+    </div>
+    <script src='rolls.js'></script>
+  </body>
+</html>
