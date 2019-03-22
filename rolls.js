@@ -5,80 +5,126 @@ const stopButton = document.getElementById('stop');
 const startButton = document.getElementById('restart');
 const rollsToggle = document.getElementById('rolls');
 const variantsToggle = document.getElementById('variants');
-const patternsToggle = document.getElementById('patterns');
+const sequencesToggle = document.getElementById('sequences');
 const chordsToggle = document.getElementById('chords');
 const bpmDisplay = document.getElementById('bpm');
 const plusfivebutton = document.getElementById('plusfive');
 const minusfivebutton = document.getElementById('minusfive');
 
-const rollnames = ['forward', 'backward', 'forward-reverse', 'mixed'];
+const rolls = ['forward', 'backward', 'forward-reverse', 'mixed'];
 const chords = ['G', 'C', 'D7'];
-const patterns = ['G->C', 'D->C',];
+const sequences = [
+  [{ chord: 'A' }, { chord: 'C' }],
+  [{ chord: 'B' }, { chord: 'E' }],
+];
 let rollName = 'forward';
 let chord = 'G';
 let beatCount = 0;
 let bpm = 90;
-hit.volume = .5;
+hit.volume = .1;
 let withRolls = false;
 let withVariants = false;
 let withChords = true;
+let withSequences = false;
 let variant = '';
 
-const changeRoll = () => {
-  rollName = rollnames[Math.floor(Math.random() * rollnames.length)];
-  if (withVariants && Math.random() < .5)
-    variant = ' variant';
-  else
-    variant = '';
+const printMotif = motif => `${motif.chord} ${motif.roll} ${motif.isVariant ? 'variant' : ''}`;
+
+const choose = motifFactories => {
+  return motifFactories[Math.floor(Math.random()*motifFactories.length)];
+};
+
+
+class MotifFactory {
+  constructor() {
+    this.selected = false;
+  }
+
+  toggle() {
+    this.selected = !this.selected;
+  }
+
+  make(motifs) {
+  }
 }
 
-const changeChord = () => {
-  chord = chords[Math.floor(Math.random()*chords.length)];
+class RollFactory extends MotifFactory {
+  make(motifs) {
+    const motif = {...motifs[motifs.length-1]};
+    motif.roll = rolls[Math.floor(Math.random() * rolls.length)];
+    return motif;
+  }
 }
-let changeOne = changeChord;
-let changeTwo = changeChord;
 
+class ChordFactory extends MotifFactory {
+  make(motifs) {
+    const motif = {...motifs[motifs.length-1]};
+    motif.chord = chords[Math.floor(Math.random()*chords.length)];
+    return [motif];
+  }
+}
+
+class SequenceFactory extends MotifFactory {
+  make(motifs) {
+  }
+}
+
+const rollFactory = new RollFactory();
+const chordFactory = new ChordFactory();
+const sequenceFactory = new SequenceFactory();
+
+const motifFactories = [rollFactory, chordFactory, sequenceFactory];
+
+const makeMotif = motifs => {
+  const factory = choose(motifFactories.filter(f => f.selected === true));
+  return factory.make(motifs);
+}
+
+const motifs = [{ chord: 'G', roll: 'forward' }, { chord: 'C', roll: 'backward' }];
 let accumulator = 0;
 let currTime;
 let beatInterval = 60000/bpm;
+let run = true;
 const main = newTime => {
   const frameTime = newTime - currTime;
   currTime = newTime;
   accumulator += frameTime;
-  while (accumulator >= beatInterval) {
+  if (accumulator >= beatInterval) {
     hit.currentTime = 0;
     beat.innerHTML = beatCount % 4 + 1;
     if (beatCount % 4 === 0) {
-      const rand = Math.random();
-      if (rand < .5) {
-        changeOne(rand);
-      } else {
-        changeTwo(rand);
-      }
-      roll.innerHTML = nextRoll.innerHTML;
-      nextRoll.innerHTML = `${chord} ${rollName} ${variant}`;
+      roll.innerHTML = printMotif(motifs.shift());
+      if (motifs.length <= 2) Array.prototype.push.apply(motifs, makeMotif(motifs));
+      console.log(motifs[0]);
+      nextRoll.innerHTML = printMotif(motifs[0]);
     }
     beatCount++;
     accumulator = 0;
   }
-  setTimeout(() => main(performance.now(), 1));
+  if (run)
+    setTimeout(() => main(performance.now(), 1));
 };
 
 let loop;
 const stop = () => {
   beatCount = 0;
   beat.innerHTML = 1;
-  clearInterval(loop);
+  run = false;
   hit.pause();
   hit.currentTime = 0;
 };
 
 const start = () => {
   stop();
-  hit.play();
-  accumulator = 0;
-  currTime = performance.now();
-  main(performance.now());
+  if (!motifFactories.reduce((acc, curr) => acc || curr.selected, false)) {
+    console.log('none selected', motifFactories);
+  } else {
+    hit.play();
+    accumulator = 0;
+    run = true;
+    currTime = performance.now();
+    main(performance.now());
+  }
 };
 
 stopButton.onclick = stop;
@@ -86,21 +132,18 @@ startButton.onclick = start;
 
 rollsToggle.onclick = () => {
   rollsToggle.classList.toggle('selected');
-  withRolls = !withRolls;
-  changeTwo = changeTwo == changeRoll ? changeChord : changeRoll;
+  rollFactory.toggle();
 };
 variantsToggle.onclick = () => {
   variantsToggle.classList.toggle('selected');
-  withVariants = !withVariants;
 };
-patternsToggle.onclick = () => {
-  patternsToggle.classList.toggle('selected');
-  withPatterns = !withPatterns;
+sequencesToggle.onclick = () => {
+  sequencesToggle.classList.toggle('selected');
+  sequenceFactory.selected = !makeSequence.selected;
 };
 chordsToggle.onclick = () => {
   chordsToggle.classList.toggle('selected');
-  withChords = !withChords;
-  changeOne = changeOne == changeChord ? changeRoll : changeChord;
+  chordFactory.toggle();
 };
 
 const changeBPM = amt => {
