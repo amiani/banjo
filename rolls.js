@@ -52,7 +52,7 @@ class RollFactory extends MotifFactory {
   make(motifs) {
     const motif = {...motifs[motifs.length-1]};
     motif.roll = rolls[Math.floor(Math.random() * rolls.length)];
-    return motif;
+    return [motif];
   }
 }
 
@@ -66,6 +66,9 @@ class ChordFactory extends MotifFactory {
 
 class SequenceFactory extends MotifFactory {
   make(motifs) {
+    const prev = {...motifs[motifs.length-1]};
+    const sequence = sequences[Math.floor(Math.random()*sequences.length)];
+    //TODO: This. :)
   }
 }
 
@@ -95,7 +98,6 @@ const main = newTime => {
     if (beatCount % 4 === 0) {
       roll.innerHTML = printMotif(motifs.shift());
       if (motifs.length <= 2) Array.prototype.push.apply(motifs, makeMotif(motifs));
-      console.log(motifs[0]);
       nextRoll.innerHTML = printMotif(motifs[0]);
     }
     beatCount++;
@@ -117,7 +119,7 @@ const stop = () => {
 const start = () => {
   stop();
   if (!motifFactories.reduce((acc, curr) => acc || curr.selected, false)) {
-    console.log('none selected', motifFactories);
+    console.log('none selected');
   } else {
     hit.play();
     accumulator = 0;
