@@ -66,9 +66,13 @@ class ChordFactory extends MotifFactory {
 
 class SequenceFactory extends MotifFactory {
   make(motifs) {
-    const prev = {...motifs[motifs.length-1]};
+    let prev = {...motifs[motifs.length-1]};
     const sequence = sequences[Math.floor(Math.random()*sequences.length)];
-    //TODO: This. :)
+    return sequence.map(s => {
+      const motif = Object.assign(prev, s);
+      prev = {...motif};
+      return motif;
+    });
   }
 }
 
@@ -141,7 +145,7 @@ variantsToggle.onclick = () => {
 };
 sequencesToggle.onclick = () => {
   sequencesToggle.classList.toggle('selected');
-  sequenceFactory.selected = !makeSequence.selected;
+  sequenceFactory.selected = !sequenceFactory.selected;
 };
 chordsToggle.onclick = () => {
   chordsToggle.classList.toggle('selected');
