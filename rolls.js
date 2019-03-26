@@ -1,4 +1,3 @@
-const hit = document.getElementById('hit');
 const roll = document.getElementById('roll');
 const nextRoll = document.getElementById('nextroll');
 const stopButton = document.getElementById('stop');
@@ -19,14 +18,19 @@ const sequences = [
 ];
 let rollName = 'forward';
 let chord = 'G';
-let beatCount = 0;
 let bpm = 90;
 hit.volume = .1;
-let withRolls = false;
-let withVariants = false;
-let withChords = true;
-let withSequences = false;
-let variant = '';
+
+let beatWorker;
+const makeBeatWorker = bpm => {
+  if (beatWorker) beatWorker.terminate();
+  beatWorker = new Worker('beatWorker.js');
+  beatWorker.postMessage(bpm);
+  beatWorker.onmessage = e => {
+    onBeat(e.data);
+  };
+};
+makeBeatWorker(bpm);
 
 const printMotif = motif => `${motif.chord} ${motif.roll} ${motif.isVariant ? 'variant' : ''}`;
 
@@ -85,18 +89,15 @@ const motifFactories = [rollFactory, chordFactory, sequenceFactory];
 const makeMotif = motifs => {
   const factory = choose(motifFactories.filter(f => f.selected === true));
   return factory.make(motifs);
-}
+};
 
 const motifs = [{ chord: 'G', roll: 'forward' }, { chord: 'C', roll: 'backward' }];
 let accumulator = 0;
 let currTime;
 let beatInterval = 60000/bpm;
-let run = true;
-const main = newTime => {
-  const frameTime = newTime - currTime;
-  currTime = newTime;
-  accumulator += frameTime;
-  if (accumulator >= beatInterval) {
+let run = false;
+const onBeat = beatCount => {
+  if (run) {
     hit.currentTime = 0;
     beat.innerHTML = beatCount % 4 + 1;
     if (beatCount % 4 === 0) {
@@ -104,16 +105,10 @@ const main = newTime => {
       if (motifs.length <= 2) Array.prototype.push.apply(motifs, makeMotif(motifs));
       nextRoll.innerHTML = printMotif(motifs[0]);
     }
-    beatCount++;
-    accumulator = 0;
   }
-  if (run)
-    setTimeout(() => main(performance.now(), 1));
 };
 
-let loop;
 const stop = () => {
-  beatCount = 0;
   beat.innerHTML = 1;
   run = false;
   hit.pause();
@@ -129,7 +124,6 @@ const start = () => {
     accumulator = 0;
     run = true;
     currTime = performance.now();
-    main(performance.now());
   }
 };
 
@@ -156,6 +150,8 @@ const changeBPM = amt => {
   bpm += amt;
   beatInterval = 60000/bpm;
   bpmDisplay.innerHTML = bpm;
+
+  makeBeatWorker(bpm);
 };
 plusfivebutton.onclick = () => changeBPM(5);
 minusfivebutton.onclick = () => changeBPM(-5);
